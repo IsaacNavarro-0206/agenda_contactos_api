@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AgendaContactos.Api/AgendaContactos.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AgendaContactos.Tests/AgendaContactos.Tests.csproj" />
+  </Folder>
+</Solution>
