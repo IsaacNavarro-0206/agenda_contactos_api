@@ -10,43 +10,11 @@ public sealed class ContactDbContext(
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<User>(entity =>
-            {
-                entity.HasMany(user => user.Contacts)
-                    .WithOne(contact => contact.User)
-                    .HasForeignKey(contact => contact.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
+        base.OnModelCreating(modelBuilder);
 
-                entity.Property(user => user.Name)
-                        .HasMaxLength(255)
-                        .IsRequired();
-
-                entity.Property(user => user.Email)
-                    .HasMaxLength(320)
-                    .IsRequired();
-
-                entity.Property(user => user.Password)
-                    .HasMaxLength(512)
-                    .IsRequired();
-
-                entity.HasIndex(user => user.Email)
-                    .IsUnique();
-            });
-
-        modelBuilder.Entity<Contact>(entity =>
-        {
-            entity.Property(contact => contact.Name)
-                .HasMaxLength(255)
-                .IsRequired();
-
-            entity.Property(contact => contact.Phone)
-                .HasMaxLength(20)
-                .IsRequired();
-
-            entity.Property(contact => contact.Email)
-                .HasMaxLength(320)
-                .IsRequired();
-        });
+        // Encuentra y aplica las clases IEntityTypeConfiguration de este proyecto.
+        modelBuilder.ApplyConfigurationsFromAssembly(
+            typeof(ContactDbContext).Assembly);
     }
 
     public void UpdateTimestamps()
