@@ -43,7 +43,8 @@ public sealed class ContactService(ContactDbContext dbContext) : IContactService
             Id = Guid.NewGuid(),
             Name = request.Name.Trim(),
             Phone = request.Phone.Trim(),
-            Email = request.Email.Trim()
+            Email = request.Email.Trim(),
+            UserId = request.UserId
         };
 
         dbContext.Contacts.Add(contact);
@@ -84,5 +85,5 @@ public sealed class ContactService(ContactDbContext dbContext) : IContactService
     }
 
     private static ContactResponse MapToResponse(Contact contact) =>
-        new(contact.Id, contact.Name, contact.Phone, contact.Email);
+        new(contact.Id, contact.Name, contact.Phone, contact.Email, contact.UserId);
 }
