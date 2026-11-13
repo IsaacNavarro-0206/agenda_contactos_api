@@ -1,5 +1,6 @@
 using AgendaContactos.Api;
 using FluentValidation;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,8 +12,11 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 builder.Services.AddScoped<IContactService, ContactService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<ContactRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<UpdateUserRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<RegisterUserRequestValidator>();
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 
@@ -23,6 +27,8 @@ var connectionString = builder.Configuration
 
 builder.Services.AddDbContext<ContactDbContext>(options =>
     options.UseNpgsql(connectionString));
+
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 if (allowedOrigins.Length > 0)
 {
