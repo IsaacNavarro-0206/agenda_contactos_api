@@ -9,7 +9,7 @@ RUN dotnet publish src/AgendaContactos.Api/AgendaContactos.Api.csproj \
     --configuration Release \
     --output /app/publish \
     --no-restore \
-    /p:UserAppHost=false
+    /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
