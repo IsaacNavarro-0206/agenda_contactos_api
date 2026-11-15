@@ -1,6 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
+COPY global.json ./
 COPY src/AgendaContactos.Api/AgendaContactos.Api.csproj src/AgendaContactos.Api/
 RUN dotnet restore src/AgendaContactos.Api/AgendaContactos.Api.csproj
 
