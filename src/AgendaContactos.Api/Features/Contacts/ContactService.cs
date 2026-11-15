@@ -4,39 +4,47 @@ namespace AgendaContactos.Api;
 
 public interface IContactService
 {
-    Task<IReadOnlyList<ContactResponse>> GetAllContacts(CancellationToken cancellationToken);
+    Task<IReadOnlyList<ContactResponse>> GetAllContacts(Guid userId, CancellationToken cancellationToken);
 
-    Task<ContactResponse> GetContactById(Guid id, CancellationToken cancellationToken);
+    Task<ContactResponse?> GetContactById(Guid userId, Guid contactId, CancellationToken cancellationToken);
 
-    Task<ContactResponse> CreateContact(ContactRequest request, CancellationToken cancellationToken);
+    Task<ContactResponse> CreateContact(Guid userId, ContactRequest request, CancellationToken cancellationToken);
 
-    Task<ContactResponse> UpdateContact(Guid id, ContactRequest request, CancellationToken cancellationToken);
+    Task<ContactResponse?> UpdateContact(Guid userId, Guid contactId, ContactRequest request, CancellationToken cancellationToken);
 
-    Task DeleteContact(Guid id, CancellationToken cancellationToken);
+    Task<bool> DeleteContact(Guid userId, Guid contactId, CancellationToken cancellationToken);
 }
 
 public sealed class ContactService(ContactDbContext dbContext) : IContactService
 {
-    public async Task<IReadOnlyList<ContactResponse>> GetAllContacts(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ContactResponse>> GetAllContacts(Guid userId, CancellationToken cancellationToken)
     {
-        var contacts = await dbContext.Contacts.AsNoTracking().ToListAsync(cancellationToken);
+        var contacts = await dbContext.Contacts
+            .AsNoTracking()
+            .Where(contact => contact.UserId == userId)
+            .ToListAsync(cancellationToken);
 
         return contacts.Select(MapToResponse).ToList();
     }
 
-    public async Task<ContactResponse> GetContactById(Guid id, CancellationToken cancellationToken)
+    public async Task<ContactResponse?> GetContactById(
+        Guid userId,
+        Guid contactId,
+        CancellationToken cancellationToken)
     {
-        var contact = await dbContext.Contacts.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        var contact = await dbContext.Contacts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                contact => contact.Id == contactId && contact.UserId == userId,
+                cancellationToken);
 
-        if (contact is null)
-        {
-            throw new KeyNotFoundException($"No se encontró un contacto con el ID {id}.");
-        }
-
-        return MapToResponse(contact);
+        return contact is null ? null : MapToResponse(contact);
     }
 
-    public async Task<ContactResponse> CreateContact(ContactRequest request, CancellationToken cancellationToken)
+    public async Task<ContactResponse> CreateContact(
+        Guid userId,
+        ContactRequest request,
+        CancellationToken cancellationToken)
     {
         var contact = new Contact
         {
@@ -44,7 +52,7 @@ public sealed class ContactService(ContactDbContext dbContext) : IContactService
             Name = request.Name.Trim(),
             Phone = request.Phone.Trim(),
             Email = request.Email.Trim(),
-            UserId = request.UserId
+            UserId = userId
         };
 
         dbContext.Contacts.Add(contact);
@@ -53,13 +61,19 @@ public sealed class ContactService(ContactDbContext dbContext) : IContactService
         return MapToResponse(contact);
     }
 
-    public async Task<ContactResponse> UpdateContact(Guid id, ContactRequest request, CancellationToken cancellationToken)
+    public async Task<ContactResponse?> UpdateContact(
+        Guid userId,
+        Guid contactId,
+        ContactRequest request,
+        CancellationToken cancellationToken)
     {
-        var contact = await dbContext.Contacts.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        var contact = await dbContext.Contacts.FirstOrDefaultAsync(
+            contact => contact.Id == contactId && contact.UserId == userId,
+            cancellationToken);
 
         if (contact is null)
         {
-            throw new KeyNotFoundException($"No se encontró un contacto con el ID {id}.");
+            return null;
         }
 
         contact.Name = request.Name.Trim();
@@ -71,17 +85,24 @@ public sealed class ContactService(ContactDbContext dbContext) : IContactService
         return MapToResponse(contact);
     }
 
-    public async Task DeleteContact(Guid id, CancellationToken cancellationToken)
+    public async Task<bool> DeleteContact(
+        Guid userId,
+        Guid contactId,
+        CancellationToken cancellationToken)
     {
-        var contact = await dbContext.Contacts.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        var contact = await dbContext.Contacts.FirstOrDefaultAsync(
+            contact => contact.Id == contactId && contact.UserId == userId,
+            cancellationToken);
 
         if (contact is null)
         {
-            throw new KeyNotFoundException($"No se encontró un contacto con el ID {id}.");
+            return false;
         }
 
         dbContext.Contacts.Remove(contact);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        return true;
     }
 
     private static ContactResponse MapToResponse(Contact contact) =>
