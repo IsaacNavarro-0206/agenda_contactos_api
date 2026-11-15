@@ -1,4 +1,5 @@
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AgendaContactos.Api;
@@ -7,6 +8,7 @@ namespace AgendaContactos.Api;
 [Route("api/[controller]")]
 public sealed class UserController(IUserService userService, IValidator<RegisterUserRequest> validator, IValidator<UpdateUserRequest> updateValidator) : ControllerBase
 {
+    [AllowAnonymous]
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<UserResponse>>> GetAllUsers(CancellationToken cancellationToken)
     {
@@ -15,14 +17,19 @@ public sealed class UserController(IUserService userService, IValidator<Register
         return Ok(user);
     }
 
+    [Authorize]
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<UserResponse>> GetUserById(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<UserResponse>> GetUserById(CancellationToken cancellationToken)
     {
-        var user = await userService.GetUserById(id, cancellationToken);
+        if (!AuthHelpers.TryGetCurrentUserId(User, out var userId))
+            return Unauthorized();
+
+        var user = await userService.GetUserById(userId, cancellationToken);
 
         return user is null ? NotFound() : Ok(user);
     }
 
+    [AllowAnonymous]
     [HttpPost]
     public async Task<ActionResult<UserResponse>> CreateUser([FromBody] RegisterUserRequest request, CancellationToken cancellationToken)
     {
@@ -37,23 +44,32 @@ public sealed class UserController(IUserService userService, IValidator<Register
         return CreatedAtAction(nameof(GetUserById), new { id = createdUser.Id }, createdUser);
     }
 
-    public async Task<ActionResult<UserResponse>> UpdateUser(Guid id, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
+    [Authorize]
+    [HttpPut]
+    public async Task<ActionResult<UserResponse>> UpdateUser([FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
     {
+        if (!AuthHelpers.TryGetCurrentUserId(User, out var userId))
+            return Unauthorized();
+
         var validationResult = await updateValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
         {
             throw new ValidationException(validationResult.Errors);
         }
 
-        var updatedUser = await userService.UpdateUser(id, request, cancellationToken);
+        var updatedUser = await userService.UpdateUser(userId, request, cancellationToken);
 
         return updatedUser is null ? NotFound() : Ok(updatedUser);
     }
 
+    [Authorize]
     [HttpDelete("{id:guid}")]
-    public async Task<ActionResult> DeleteUser(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult> DeleteUser(CancellationToken cancellationToken)
     {
-        await userService.DeleteUser(id, cancellationToken);
+        if (!AuthHelpers.TryGetCurrentUserId(User, out var userId))
+            return Unauthorized();
+
+        await userService.DeleteUser(userId, cancellationToken);
 
         return NoContent();
     }
