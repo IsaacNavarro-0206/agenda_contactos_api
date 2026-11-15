@@ -15,6 +15,7 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddScoped<IContactService, ContactService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<ContactRequestValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<UpdateUserRequestValidator>();
