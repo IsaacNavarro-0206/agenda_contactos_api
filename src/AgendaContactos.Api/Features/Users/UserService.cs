@@ -88,5 +88,4 @@ public sealed class UserService(ContactDbContext dbContext, IPasswordHasher<User
 
     private static UserResponse MapToResponse(User user) =>
         new UserResponse(user.Id, user.Name, user.Email);
-
 }
