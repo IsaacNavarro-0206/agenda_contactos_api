@@ -5,8 +5,6 @@ namespace AgendaContactos.Api;
 
 public interface IUserService
 {
-    Task<IReadOnlyList<UserResponse>> GetAllUsers(CancellationToken cancellationToken);
-
     Task<UserResponse> GetUserById(Guid id, CancellationToken cancellationToken);
 
     Task<UserResponse> CreateUser(RegisterUserRequest userRequest, CancellationToken cancellationToken);
@@ -18,13 +16,6 @@ public interface IUserService
 
 public sealed class UserService(ContactDbContext dbContext, IPasswordHasher<User> passwordHasher) : IUserService
 {
-    public async Task<IReadOnlyList<UserResponse>> GetAllUsers(CancellationToken cancellationToken)
-    {
-        var users = await dbContext.Users.AsNoTracking().ToListAsync(cancellationToken);
-
-        return users.Select(MapToResponse).ToList();
-    }
-
     public async Task<UserResponse> GetUserById(Guid id, CancellationToken cancellationToken)
     {
         var user = await dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id, cancellationToken);

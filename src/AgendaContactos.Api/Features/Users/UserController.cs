@@ -8,25 +8,17 @@ namespace AgendaContactos.Api;
 [Route("api/[controller]")]
 public sealed class UserController(IUserService userService, IValidator<RegisterUserRequest> validator, IValidator<UpdateUserRequest> updateValidator) : ControllerBase
 {
-    [AllowAnonymous]
-    [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<UserResponse>>> GetAllUsers(CancellationToken cancellationToken)
-    {
-        var user = await userService.GetAllUsers(cancellationToken);
-
-        return Ok(user);
-    }
-
     [Authorize]
-    [HttpGet("{id:guid}")]
-    public async Task<ActionResult<UserResponse>> GetUserById(CancellationToken cancellationToken)
+    [HttpGet("me")]
+    public async Task<ActionResult<UserResponse>> GetCurrentUser(
+    CancellationToken cancellationToken)
     {
         if (!AuthHelpers.TryGetCurrentUserId(User, out var userId))
             return Unauthorized();
 
         var user = await userService.GetUserById(userId, cancellationToken);
 
-        return user is null ? NotFound() : Ok(user);
+        return Ok(user);
     }
 
     [AllowAnonymous]
@@ -41,12 +33,12 @@ public sealed class UserController(IUserService userService, IValidator<Register
 
         var createdUser = await userService.CreateUser(request, cancellationToken);
 
-        return CreatedAtAction(nameof(GetUserById), new { id = createdUser.Id }, createdUser);
+        return CreatedAtAction(nameof(GetCurrentUser), new { id = createdUser.Id }, createdUser);
     }
 
     [Authorize]
-    [HttpPut]
-    public async Task<ActionResult<UserResponse>> UpdateUser([FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
+    [HttpPut("me")]
+    public async Task<ActionResult<UserResponse>> UpdateCurrentUser([FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
     {
         if (!AuthHelpers.TryGetCurrentUserId(User, out var userId))
             return Unauthorized();
@@ -63,8 +55,8 @@ public sealed class UserController(IUserService userService, IValidator<Register
     }
 
     [Authorize]
-    [HttpDelete("{id:guid}")]
-    public async Task<ActionResult> DeleteUser(CancellationToken cancellationToken)
+    [HttpDelete("me")]
+    public async Task<ActionResult> DeleteCurrentUser(CancellationToken cancellationToken)
     {
         if (!AuthHelpers.TryGetCurrentUserId(User, out var userId))
             return Unauthorized();
